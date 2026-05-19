@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jokester 🎭</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <!-- Floating decorative blobs -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="wrapper">
+
+    <!-- ── Header ─────────────────────────────────────────────── -->
+    <header class="site-header">
+      <div class="logo">
+        <span class="logo-emoji">🎭</span>
+        <span class="logo-text">Jokester</span>
+      </div>
+      <p class="tagline">Find your perfect joke. No bad days allowed.</p>
+    </header>
+
+    <!-- ── Filter Form ─────────────────────────────────────────── -->
+    <section class="card form-card">
+      <h2 class="section-title">Customise your joke</h2>
+
+      <form action="/joke" method="POST">
+
+        <!-- Category -->
+        <div class="form-group">
+          <label for="category">Category</label>
+          <div class="select-wrap">
+            <select id="category" name="category">
+              <option value="Any"         <%= query.category === 'Any'         ? 'selected' : '' %>>🎲 Any</option>
+              <option value="Programming" <%= query.category === 'Programming' ? 'selected' : '' %>>💻 Programming</option>
+              <option value="Misc"        <%= query.category === 'Misc'        ? 'selected' : '' %>>🌀 Miscellaneous</option>
+              <option value="Dark"        <%= query.category === 'Dark'        ? 'selected' : '' %>>🖤 Dark</option>
+              <option value="Pun"         <%= query.category === 'Pun'         ? 'selected' : '' %>>🥁 Puns</option>
+              <option value="Spooky"      <%= query.category === 'Spooky'      ? 'selected' : '' %>>👻 Spooky</option>
+              <option value="Christmas"   <%= query.category === 'Christmas'   ? 'selected' : '' %>>🎄 Christmas</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Joke Type -->
+        <div class="form-group">
+          <label>Joke format</label>
+          <div class="radio-group">
+            <label class="radio-pill <%= !query.jokeType || query.jokeType === 'any'    ? 'checked' : '' %>">
+              <input type="radio" name="jokeType" value="any"    <%= !query.jokeType || query.jokeType === 'any'    ? 'checked' : '' %> /> Any format
+            </label>
+            <label class="radio-pill <%= query.jokeType === 'single'  ? 'checked' : '' %>">
+              <input type="radio" name="jokeType" value="single" <%= query.jokeType === 'single'  ? 'checked' : '' %> /> One-liner
+            </label>
+            <label class="radio-pill <%= query.jokeType === 'twopart' ? 'checked' : '' %>">
+              <input type="radio" name="jokeType" value="twopart"<%= query.jokeType === 'twopart' ? 'checked' : '' %> /> Setup & Punchline
+            </label>
+          </div>
+        </div>
+
+        <!-- Safety filters -->
+        <div class="form-group">
+          <label>Block these themes</label>
+          <div class="checkbox-group">
+            <% const flags = ['nsfw','religious','political','racist','sexist','explicit'];
+               const labels = ['🔞 NSFW','⛪ Religious','🗳️ Political','🚫 Racist','🚫 Sexist','💥 Explicit'];
+               flags.forEach((f, i) => {
+                 const isChecked = Array.isArray(query.blacklistFlags)
+                   ? query.blacklistFlags.includes(f)
+                   : query.blacklistFlags === f;
+            %>
+            <label class="check-pill <%= isChecked ? 'checked' : '' %>">
+              <input type="checkbox" name="blacklistFlags" value="<%= f %>" <%= isChecked ? 'checked' : '' %> />
+              <%- labels[i] %>
+            </label>
+            <% }); %>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary">
+          Hit me with a joke! 🎲
+        </button>
+
+      </form>
+    </section>
+
+    <!-- ── Error State ─────────────────────────────────────────── -->
+    <% if (error) { %>
+    <div class="alert alert-error">
+      <span class="alert-icon">😅</span>
+      <p><%= error %></p>
+    </div>
+    <% } %>
+
+    <!-- ── Joke Result ─────────────────────────────────────────── -->
+    <% if (joke) { %>
+    <section class="card joke-card">
+
+      <!-- Category badge -->
+      <div class="joke-meta">
+        <span class="badge badge-<%= joke.category.toLowerCase() %>"><%= joke.category %></span>
+        <span class="joke-id">Joke #<%= joke.id %></span>
+      </div>
+
+      <!-- Single-line joke -->
+      <% if (joke.type === 'single') { %>
+        <p class="joke-single"><%= joke.joke %></p>
+
+      <!-- Two-part joke -->
+      <% } else { %>
+        <div class="joke-twopart">
+          <p class="joke-setup">🤔 <%= joke.setup %></p>
+          <div class="punchline-reveal">
+            <button class="btn-reveal" onclick="revealPunchline(this)">Tap for the punchline 🥁</button>
+            <p class="joke-punchline hidden">😂 <%= joke.delivery %></p>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Flags disclaimer -->
+      <% if (joke.flags && Object.values(joke.flags).some(Boolean)) { %>
+      <div class="flags-row">
+        <% Object.entries(joke.flags).forEach(([flag, val]) => { %>
+          <% if (val) { %><span class="flag-chip"><%= flag %></span><% } %>
+        <% }); %>
+      </div>
+      <% } %>
+
+    </section>
+    <% } %>
+
+    <!-- ── Empty State ─────────────────────────────────────────── -->
+    <% if (!joke && !error) { %>
+    <div class="empty-state">
+      <div class="empty-emoji">🎪</div>
+      <p>Pick your filters and smash that button.</p>
+    </div>
+    <% } %>
+
+  </div><!-- /wrapper -->
+
+  <script src="/app.js"></script>
+</body>
+</html>
