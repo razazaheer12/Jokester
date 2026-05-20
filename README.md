@@ -108,7 +108,7 @@ jokester/
 
 ---
 
-## ⚙️ How It Works
+## ⚙️ How It Works ?
 
 ```
 User fills form  →  POST /joke  →  Express builds API URL  →  Axios calls JokeAPI
